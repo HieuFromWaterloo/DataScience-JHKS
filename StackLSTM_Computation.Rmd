@@ -1,0 +1,53 @@
+---
+title: "Stacked LSTM"
+author: "Hugh Nguyen"
+date: "8/14/2020"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Layer 1
+
+This layers takes into the input sequence from 4 features: stock price, volume, price moving average and volume moving average. It tries to output the prediction then passes these predictions into the next layer to learn even more complex and abstracting representation of input sequence.
+
+$$
+\begin{aligned}
+i^{(1)}_{(t)} &= \sigma(W_{xi}^{T}.x_{(t)} + W_{hi}^{T}.h_{(t-1)} + b_i)\\
+f^{(1)}_{(t)} &= \sigma(W_{xf}^{T}.x_{(t)} + W_{hf}^{T}.h_{(t-1)} + b_f)\\
+o^{(1)}_{(t)} &= \sigma(W_{xo}^{T}.x_{(t)} + W_{ho}^{T}.h_{(t-1)} + b_o)\\
+g^{(1)}_{(t)} &= tanh(W_{xg}^{T}.x_{(t)} + W_{hg}^{T}.h_{(t-1)} + b_g)\\
+c^{(1)}_{(t)} &= f^{(1)}_{(t)} \otimes c^{(1)}_{(t-1)} + i^{(1)}_{(t)} \otimes g^{(1)}_{(t)} \\
+\hat{y}^{(1)}_{(t)} &= h^{(1)}_{(t)} =  o^{(1)}_{(t)} \otimes tanh(c^{(1)}_{(t)})\\
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+x_{(t)} &: \text{input vector at time t} \\
+\bf{b} &: \text{bias terms}\\
+\bf{W} &: \text{weight matrices}\\
+i^{(1)}_{(t)} &: \text{input gate computation} \\
+f^{(1)}_{(t)} &: \text{forget gate computation} \\
+o^{(1)}_{(t)} &: \text{output gate computation} \\
+g^{(1)}_{(t)} &: \text{main layer output computation, it learns new information} \\
+c^{(1)}_{(t)} &: \text{long term memory computation} \\
+\hat{y}^{(1)}_{(t)}\,h^{(1)}_{(t)} &: \text{estimated prediction computation} \\
+\end{aligned}
+$$
+
+## Layer 2:
+
+Layer 2 basically consumes the hidden features that approximates the short term relationship of the raw input from Layer 1 $h_{(1)},...,h_{(t)}$ then applies the exact same computation as above. (i.e. 2nd layer takes in a 1 by 10 vector output from the previous layer). Its final output will finalize the predicted values for a given input sequence by making use of both insights extracted from 1 layer to another.
+
+$$
+\begin{aligned}
+\hat{y}^{(2)}_{(t)} &= {h}^{(2)}_{(t)}\\
+&= \phi^{(2)}(h^{(1)}_{t}, h^{(2)}_{(t-1)})\\
+\end{aligned}
+$$
+

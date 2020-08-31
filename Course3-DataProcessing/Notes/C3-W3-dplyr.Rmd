@@ -1,0 +1,336 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+% C3W3 - Managing Data Frames with `dplyr` - Hugh Nguyen
+%
+
+```{r, echo=FALSE, results="hide"}
+options(width = 50)
+```
+
+- arrange: re-order rows of a df
+
+- filter: extract subset of rows of df BASED ON logical conditions
+
+- select: return subset of cols of a df
+
+- mutate: add new var or transform existing var in a df
+
+- rename: rename cols/vars
+
+- summarize: summarize statistics
+
+- %>%: pipeline operation
+
+# dplyr
+
+The data frame is a key data structure in statistics and in R.
+
+* There is one observation per row
+
+* Each column represents a variable or measure or characteristic
+
+* Primary implementation that you will use is the default R
+  implementation
+
+* Other implementations, particularly relational databases systems
+
+
+# dplyr
+
+* Developed by Hadley Wickham of RStudio
+
+* An optimized and distilled version of `plyr` package (also by Hadley)
+
+* Does not provide any "new" functionality per se, but **greatly**
+  simplifies existing functionality in R
+
+* Provides a "grammar" (in particular, verbs) for data manipulation
+
+* Is **very** fast, as many key operations are coded in C++
+
+
+# dplyr Verbs
+
+* `select`: return a subset of the columns of a data frame
+
+* `filter`: extract a subset of rows from a data frame based on
+  logical conditions
+
+* `arrange`: reorder rows of a data frame
+
+
+* `rename`: rename variables in a data frame
+
+* `mutate`: add new variables/columns or transform existing variables
+
+* `summarise` / `summarize`: generate summary statistics of different
+  variables in the data frame, possibly within strata
+
+There is also a handy `print` method that prevents you from printing a
+lot of data to the console.
+
+
+
+# dplyr Properties
+
+* The first argument is a data frame.
+
+* The subsequent arguments describe what to do with it, and you can
+  refer to columns in the data frame directly without using the $
+  operator (just use the names).
+
+* The result is a new data frame
+
+* Data frames must be properly formatted and annotated for this to all
+  be useful
+
+
+# Load the `dplyr` package
+
+
+This step is important!
+
+```{r}
+library(dplyr)
+```
+
+
+# `select`
+
+```{r}
+chicago <- readRDS("chicago.rds")
+dim(chicago)
+head(select(chicago, 1:5))
+```
+
+
+# `select`
+
+```{r}
+names(chicago)[1:3]
+head(select(chicago, city:dptp))
+```
+
+# `select`
+
+In dplyr you can do
+
+```{r,eval=FALSE}
+head(select(chicago, -(city:dptp)))
+```
+
+Equivalent base R
+
+```{r,eval=FALSE}
+i <- match("city", names(chicago))
+j <- match("dptp", names(chicago))
+head(chicago[, -(i:j)])
+```
+
+
+
+# `filter`
+
+```{r}
+chic.f <- filter(chicago, pm25tmean2 > 30)
+head(select(chic.f, 1:3, pm25tmean2), 10)
+```
+
+# `filter`
+
+```{r}
+chic.f <- filter(chicago, pm25tmean2 > 30 & tmpd > 80)
+head(select(chic.f, 1:3, pm25tmean2, tmpd), 10)
+```
+
+
+# `arrange`
+
+Reordering rows of a data frame (while preserving corresponding order
+of other columns) is normally a pain to do in R.
+
+```{r}
+chicago <- arrange(chicago, date)
+head(select(chicago, date, pm25tmean2), 3)
+tail(select(chicago, date, pm25tmean2), 3)
+```
+
+# `arrange`
+
+Columns can be arranged in descending order too.
+
+```{r}
+chicago <- arrange(chicago, desc(date))
+head(select(chicago, date, pm25tmean2), 3)
+tail(select(chicago, date, pm25tmean2), 3)
+```
+
+
+# `rename`
+
+Renaming a variable in a data frame in R is surprising hard to do!
+
+```{r,tidy=FALSE}
+head(chicago[, 1:5], 3)
+chicago <- rename(chicago, dewpoint = dptp, 
+                  pm25 = pm25tmean2)
+head(chicago[, 1:5], 3)
+```
+
+
+# `mutate`
+
+```{r, tidy=FALSE}
+chicago <- mutate(chicago, 
+                  pm25detrend=pm25-mean(pm25, na.rm=TRUE))
+head(select(chicago, pm25, pm25detrend))
+```
+
+# `group_by`
+
+Generating summary statistics by stratum
+
+```{r, tidy=FALSE}
+chicago <- mutate(chicago, 
+                  tempcat = factor(1 * (tmpd > 80), 
+                                   labels = c("cold", "hot")))
+hotcold <- group_by(chicago, tempcat)
+summarize(hotcold, pm25 = mean(pm25, na.rm = TRUE), 
+          o3 = max(o3tmean2), 
+          no2 = median(no2tmean2))
+```
+
+
+# `group_by`
+
+Generating summary statistics by stratum
+
+```{r, tidy=FALSE}
+chicago <- mutate(chicago, 
+                  year = as.POSIXlt(date)$year + 1900)
+years <- group_by(chicago, year)
+summarize(years, pm25 = mean(pm25, na.rm = TRUE), 
+          o3 = max(o3tmean2, na.rm = TRUE), 
+          no2 = median(no2tmean2, na.rm = TRUE))
+```
+
+```{r,echo=FALSE}
+chicago$year <- NULL  ## Can't use mutate to create an existing variable
+```
+
+
+# `%>%`
+
+```{r,tidy=FALSE,eval=FALSE}
+chicago %>% mutate(month = as.POSIXlt(date)$mon + 1) 
+	%>% group_by(month) 
+	%>% summarize(pm25 = mean(pm25, na.rm = TRUE), 
+          o3 = max(o3tmean2, na.rm = TRUE), 
+          no2 = median(no2tmean2, na.rm = TRUE))
+```
+
+```{r,echo=FALSE}
+chicago %>% mutate(month = as.POSIXlt(date)$mon + 1) %>% group_by(month) %>% 
+summarize(pm25 = mean(pm25, na.rm = TRUE), o3 = max(o3tmean2, na.rm = TRUE), no2 = median(no2tmean2, na.rm = TRUE))
+
+```
+
+
+# dplyr
+
+Once you learn the dplyr "grammar" there are a few additional benefits
+
+* dplyr can work with other data frame "backends"
+
+* `data.table` for large fast tables
+
+* SQL interface for relational databases via the DBI package
+
+# QUIZ
+
+## Q1:
+```{r}
+download.file('https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2Fss06hid.csv'
+              , 'ACS.csv'
+              , method='curl' )
+
+# Read data into data.frame
+ACS <- read.csv('ACS.csv')
+
+agricultureLogical <- ACS$ACR == 3 & ACS$AGS == 6
+head(which(agricultureLogical), 3)
+```
+
+## Q2:
+
+```{r}
+library(jpeg)
+
+# Download the file
+download.file('https://d396qusza40orc.cloudfront.net/getdata%2Fjeff.jpg'
+              , 'jeff.jpg'
+              , mode='wb' )
+
+# Read the image
+picture <- jpeg::readJPEG('jeff.jpg'
+                          , native=TRUE)
+
+# Get Sample Quantiles corressponding to given prob
+quantile(picture, probs = c(0.3, 0.8) )
+```
+
+## Q3:
+
+```{r}
+library("data.table")
+
+
+# Download data and read FGDP data into data.table
+FGDP <- data.table::fread('https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FGDP.csv'
+                          , skip=4
+                          , nrows = 190
+                          , select = c(1, 2, 4, 5)
+                          , col.names=c("CountryCode", "Rank", "Economy", "Total")
+                          )
+
+# Download data and read FGDP data into data.table
+FEDSTATS_Country <- data.table::fread('https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FEDSTATS_Country.csv'
+                                      )
+                                      
+mergedDT <- merge(FGDP, FEDSTATS_Country, by = 'CountryCode')
+
+# How many of the IDs match?
+nrow(mergedDT)
+```
+
+## Q4:
+
+```{r}
+# "High income: OECD" 
+mergedDT[`Income Group` == "High income: OECD"
+         , lapply(.SD, mean)
+         , .SDcols = c("Rank")
+         , by = "Income Group"]
+
+
+
+# "High income: nonOECD"
+mergedDT[`Income Group` == "High income: nonOECD"
+         , lapply(.SD, mean)
+         , .SDcols = c("Rank")
+         , by = "Income Group"]
+
+```
+
+## Q5:
+
+```{r}
+library('dplyr')
+
+breaks <- quantile(mergedDT[, Rank], probs = seq(0, 1, 0.2), na.rm = TRUE)
+mergedDT$quantileGDP <- cut(mergedDT[, Rank], breaks = breaks)
+mergedDT[`Income Group` == "Lower middle income", .N, by = c("Income Group", "quantileGDP")]
+```
