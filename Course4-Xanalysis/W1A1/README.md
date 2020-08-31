@@ -40,12 +40,12 @@ The following descriptions of the 9 variables in the dataset are taken from the 
 
 ## Output
 
-![Plot #1](plot1.png)
+![Plot 1](plot1.png)
 
-![Plot #2](plot2.png)
+![Plot 2](plot2.png)
 
-![Plot #3](plo3.png)
+![Plot 3](plo3.png)
 
-![Plot #4](plot4.png)
+![Plot 4](plot4.png)
 
 
