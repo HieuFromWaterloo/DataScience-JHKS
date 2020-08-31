@@ -2,7 +2,7 @@
 
 # PLOT 1: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 library("data.table")
-setwd("C:/Users/Hieu Ng/Desktop/DS-JHK/Course4-Xanalysis/W1A1/data")
+setwd("C:/Users/Hieu Ng/Desktop/DataScience-JHKS/Course4-Xanalysis/W1A1/data")
 # Read input data
 dt <- data.table::fread(input = "household_power_consumption.txt"
                              , na.strings="?"

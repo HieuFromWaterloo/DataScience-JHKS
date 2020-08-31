@@ -37,3 +37,15 @@ The following descriptions of the 9 variables in the dataset are taken from the 
     - Please examine the plot files in the GitHub repository. Do the plot files appear to be of the correct graphics file format?
     - Does each plot appear correct?
     - Does each set of R code appear to create the reference plot?
+
+## Output
+
+![Plot #1](plot1.png)
+
+![Plot #2](plot2.png)
+
+![Plot #3](plo3.png)
+
+![Plot #4](plot4.png)
+
+
