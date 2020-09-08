@@ -170,8 +170,6 @@ ggplot(total.steps, aes(x = steps)) +
 
 ![](C5W3PA1_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
-Type of Estimate | Mean.Steps | Median.Steps
---- | --- | ---
 With NA:
 
     - Mean steps: 10765
