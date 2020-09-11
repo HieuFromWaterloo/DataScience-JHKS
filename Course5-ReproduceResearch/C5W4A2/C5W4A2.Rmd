@@ -1,0 +1,170 @@
+---
+title: 'C5W4A2 - Peer Assessment 2'
+author: "Hieu Quoc Nguyen"
+date: "9/9/2020"
+output:
+  html_document:
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern.
+
+This project involves exploring the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database. This database tracks characteristics of major storms and weather events in the United States, including when and where they occur, as well as estimates of any fatalities, injuries, and property damage.
+
+# Data
+
+The data for this assignment come in the form of a comma-separated-value file compressed via the bzip2 algorithm to reduce its size. You can download the file from the course web site:
+
+    - Storm Data [47Mb]
+
+
+There is also some documentation of the database available. Here you will find how some of the variables are constructed/defined.
+
+    - National Weather Service Storm Data Documentation
+    
+    - National Climatic Data Center Storm Events FAQ
+    
+The events in the database start in the year 1950 and end in November 2011. In the earlier years of the database there are generally fewer events recorded, most likely due to a lack of good records. More recent years should be considered more complete.
+
+
+# Synopsis:
+
+The basic goal of this assignment is to explore the NOAA Storm Database and answer some basic questions about severe weather events. You must use the database to answer the questions below and show the code for your entire analysis. Your analysis can consist of tables, figures, or other summaries. You may use any R package you want to support your analysis.
+
+Questions
+Your data analysis must address the following questions:
+
+    1. Across the United States, which types of events are most harmful with respect to population health?
+    
+    2. Across the United States, which types of events have the greatest economic consequences?
+    
+Consider writing your report as if it were to be read by a government or municipal manager who might be responsible for preparing for severe weather events and will need to prioritize resources for different types of events. However, there is no need to make any specific recommendations in your report.
+
+# Assignment Implementation
+
+The github link to this project is [here](https://github.com/HieuFromWaterloo/DataScience-JHKS/tree/master/Course5-ReproduceResearch/C5W4A2)
+
+## 2. Data Processing
+
+Read the data from CSV then covert into data.table
+
+```{r}
+library("data.table")
+library("ggplot2")
+
+main.csv = read.csv("repdata_data_StormData.csv.bz2")
+main.dt = as.data.table(main.csv)
+str(main.dt)
+```
+
+This data contains 902297 obs. with  37 columns
+
+### 2.1. Data Filtering
+
+Select only columns which we will use for the analysis, namely `"EVTYPE", "FATALITIES","INJURIES", "PROPDMG","CROPDMG"`
+
+```{r}
+# Filter Cols
+main.dt = main.dt[, c("EVTYPE", "FATALITIES",
+                      "INJURIES", "PROPDMG",
+                      "CROPDMG")]
+
+# Only use data where fatalities or injuries > 0 
+main.dt = main.dt[(EVTYPE != "?" &
+                   (INJURIES > 0 | FATALITIES > 0 | PROPDMG > 0 | CROPDMG > 0)),]
+```
+
+After applying filtering, our dataset now contains 245704  obs. of  7 variables as shown below:
+
+```{r}
+str(main.dt)
+```
+There is no null values:
+
+```{r}
+nrow(main.dt[is.na(INJURIES),])
+```
+### 2.2. Compute Total Fatalities and Injuries
+
+```{r}
+total.injury.dt = main.dt[, .(FATALITIES = sum(FATALITIES), INJURIES = sum(INJURIES), totals = sum(FATALITIES) + sum(INJURIES)), by = .(EVTYPE)]
+# sort by decreasing order
+total.injury.dt = total.injury.dt[order(-FATALITIES), ]
+total.injury.dt = total.injury.dt[1:10, ]
+head(total.injury.dt, 5)
+```
+
+### 2.3. Compute Total Property and Crop Cost
+
+```{r}
+total.prop.crop.cost = main.dt[, .(PROPDMG  = sum(PROPDMG), CROPDMG = sum(CROPDMG), Total_Cost = sum(PROPDMG) + sum(CROPDMG)), by = .(EVTYPE)]
+# sort by decreasing order
+total.prop.crop.cost = total.prop.crop.cost[order(-Total_Cost), ]
+total.prop.crop.cost = total.prop.crop.cost[1:10, ]
+head(total.prop.crop.cost, 5)
+```
+
+## 3: Results
+
+### 3.1. Across the United States, which types of events are most harmful with respect to population health?
+
+Melting data table
+```{r}
+health.harmful.dt = melt(total.injury.dt, id.vars="EVTYPE", variable.name = "Health_Damage")
+head(health.harmful.dt, 5)
+```
+
+Create chart:
+
+```{r}
+ggplot(health.harmful.dt, aes(x=reorder(EVTYPE, -value), y=value)) +
+  # Plot data as bar chart
+  geom_bar(stat="identity", aes(fill=Health_Damage), position="dodge") +
+  # set y-axis label
+  ylab("Frequency Count") +
+  # Set x-axis label
+  xlab("Event Type") +
+  # Rotate x-axis for better labelling
+  theme(axis.text.x = element_text(angle=25, hjust=1)) +
+  # Set chart title and center it
+  ggtitle("Top 10 Deadliest Disasters in the US") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Based on the plot above, we observed that Tornadoe caused the most fatalities and injuries over the years.
+
+### 3.2.Across the United States, which types of events have the greatest economic consequences?
+
+Melting data table 
+```{r}
+econ.consequences = melt(total.prop.crop.cost, id.vars="EVTYPE", variable.name = "Econ_Damage")
+head(econ.consequences, 5)
+```
+
+Create chart:
+
+```{r econChart}
+ggplot(econ.consequences, aes(x=reorder(EVTYPE, -value), y=value)) +
+  # Plot data as bar chart
+  geom_bar(stat="identity", aes(fill=Econ_Damage), position="dodge") +
+  # set y-axis label
+  ylab("Cost (USD)") + 
+  # Set x-axis label
+  xlab("Event Type") +
+  # Rotate x-axis tick labels 
+  theme(axis.text.x = element_text(angle=25, hjust=1)) +
+  # Set title
+  ggtitle("Top 10 Economic Destructive Disasters in the US") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Based on the plot above, we observed that Tornado caused the most economical damage shown by the highest cost in properties and crops.
+
+Overall, Tornado is the deadliest disasters which can cause both heath and economical damages in the US.
+
